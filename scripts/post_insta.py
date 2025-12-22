@@ -27,7 +27,6 @@ def generate_caption_by_ai(image_url):
     print("Asking OpenAI to describe the image...")
     
     system_prompt = """
-    あなたは「都市の観察者」です。
     送られてきた写真に、Instagramのキャプションを生成してください。
     
     # 制約条件
