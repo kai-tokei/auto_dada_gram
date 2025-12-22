@@ -3,7 +3,6 @@ name: Instagram Auto Post
 on:
   workflow_dispatch: # GitHubのブラウザ画面からボタン一つで手動実行できるようにする
   schedule:
-    - cron: '0 22 * * *'  # 毎日22時 (UTCなので日本時間7時)
     - cron: '0 10 * * *'  # 毎日10時 (UTCなので日本時間19時)
 
 jobs:
