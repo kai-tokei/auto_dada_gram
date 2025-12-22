@@ -27,11 +27,13 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }} 
         run: python scripts/post_insta.py
 
-      - name: Commit and Push changes (Delete uploaded photo)
+      - name: Commit and Push changes
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add photos/
+          # 変更がある場合のみコミット
           git commit -m "Auto-post and delete photo [skip ci]" || echo "No changes to commit"
-          git push
-
+          # ここが重要！ pullしてマージしてからpushする設定
+          git pull --rebase origin main
+          git push origin main
