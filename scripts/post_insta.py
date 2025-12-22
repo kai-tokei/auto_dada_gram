@@ -84,7 +84,7 @@ def post_to_instagram(image_url, caption):
         return False
     
     creation_id = res.json().get('id')
-    time.sleep(10) # 処理待ち
+    time.sleep(30) 
 
     publish_url = f"https://graph.facebook.com/{API_VER}/{IG_USER_ID}/media_publish"
     pub_payload = {
