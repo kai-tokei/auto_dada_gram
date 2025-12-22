@@ -4,32 +4,71 @@ import glob
 import random
 import time
 import requests
+from openai import OpenAI
 
 # --- 設定 ---
 PHOTOS_DIR = "photos"
 IG_USER_ID = os.environ.get("IG_USER_ID")
 IG_ACCESS_TOKEN = os.environ.get("IG_ACCESS_TOKEN")
-# GitHub Actionsが自動で設定する環境変数を使う
-GITHUB_REPO = os.environ.get("GITHUB_REPOSITORY") # "User/Repo" の形式
-BRANCH_NAME = "main" # もしブランチ名が master ならここを変える
+GITHUB_REPO = os.environ.get("GITHUB_REPOSITORY")
+BRANCH_NAME = "main"
 API_VER = "v18.0"
 
+# OpenAIクライアント初期化
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+
 def get_raw_url(image_path):
-    """
-    GitHubのRaw画像のURLを生成する
-    例: https://raw.githubusercontent.com/UmikaiBun/Repo/main/photos/001.jpg
-    """
-    # Windows/Linuxのパス区切り文字の違いを吸収してスラッシュにする
+    """GitHubのRaw画像のURLを生成する"""
     clean_path = image_path.replace(os.sep, '/')
-    
     url = f"https://raw.githubusercontent.com/{GITHUB_REPO}/{BRANCH_NAME}/{clean_path}"
-    print(f"Generated Raw URL: {url}")
     return url
+
+def generate_caption_by_ai(image_url):
+    print("Asking OpenAI to describe the image...")
+    
+    system_prompt = """
+    あなたは「都市の観察者」だ。
+    送られてきた写真を、建築的、幾何学的、あるいはシュルレアリスム、未来派、ダダイズムの視点で分析し、Instagramのキャプションを生成せよ。
+    
+    # 制約条件
+    - トーン：静的、客観的、少し詩的、劇的、あるいはハードボイルド。絵文字は使わない。
+    - 視点：色彩、光、構造、テクスチャ、都市の孤独、風景、などに注目する。
+    - 言語：日本語。
+    - 構成：
+      1行目：短いタイトルあるいは詩的な一文。
+      2行目：その英語訳。
+      最後：関連するハッシュタグを5個（英語と日本語を混ぜて）。
+    
+    # 悪い例
+    「きれいな空ですね！」「楽しそう！」（感情的すぎたり、凡庸すぎるのはNG）
+    
+    # 良い例
+    「コンクリートの皮膚呼吸。あるいは80年代の亡霊」
+    「摩天楼とビルマブレンドの劇的な衝突」
+    """
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini", 
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": [
+                    {"type": "text", "text": "Generate a caption for this image."},
+                    {"type": "image_url", "image_url": {"url": image_url}}
+                ]}
+            ],
+            max_tokens=300
+        )
+        caption = response.choices[0].message.content
+        print(f"Generated Caption:\n{caption}")
+        return caption
+    except Exception as e:
+        print(f"OpenAI Error: {e}")
+        # エラー時は無難なデフォルトキャプションを返す
+        return ".\n#archive #streetphotography #japanphotography #snapshot"
 
 def post_to_instagram(image_url, caption):
     """Instagram Graph APIを叩いて投稿する"""
-    
-    # 1. コンテナ作成
     create_url = f"https://graph.facebook.com/{API_VER}/{IG_USER_ID}/media"
     payload = {
         'image_url': image_url,
@@ -40,18 +79,13 @@ def post_to_instagram(image_url, caption):
     print("Creating Media Container...")
     res = requests.post(create_url, data=payload)
     
-    # エラーハンドリング（画像サイズや形式で怒られることがある）
     if res.status_code != 200:
         print(f"Container Creation Failed: {res.text}")
         return False
     
     creation_id = res.json().get('id')
-    print(f"Container ID: {creation_id}")
+    time.sleep(10) # 処理待ち
 
-    # APIの処理待ち（重要）
-    time.sleep(10) 
-
-    # 2. 投稿公開 (Publish)
     publish_url = f"https://graph.facebook.com/{API_VER}/{IG_USER_ID}/media_publish"
     pub_payload = {
         'creation_id': creation_id,
@@ -69,35 +103,8 @@ def post_to_instagram(image_url, caption):
         return False
 
 def main():
-    # 1. 画像の選定
+    # 画像選定
     files = glob.glob(os.path.join(PHOTOS_DIR, "*.[jJ][pP][gG]")) + \
             glob.glob(os.path.join(PHOTOS_DIR, "*.[pP][nN][gG]")) + \
-            glob.glob(os.path.join(PHOTOS_DIR, "*.[jJ][pP][eE][gG]"))
-    
-    if not files:
-        print("No photos found. Exiting.")
-        sys.exit(0)
-
-    target_image = random.choice(files)
-    print(f"Selected Image: {target_image}")
-
-    filename = os.path.basename(target_image)
-    caption = f"{filename}\n.\n.\n#archive #streetphotography #texture"
-
-    # 2. GitHubのRaw URLを取得 (Imgur不要！)
-    image_url = get_raw_url(target_image)
-
-    # 3. Instagramへ投稿
-    success = post_to_instagram(image_url, caption)
-
-    # 4. 成功したらローカルファイルを削除し、Gitで反映させるための終了コード
-    if success:
-        print(f"Deleting local file: {target_image}")
-        os.remove(target_image)
-    else:
-        print("Failed to post. File kept.")
-        sys.exit(1)
-
-if __name__ == "__main__":
-    main()
+            glob.glob(os.path.join(PHOTOS_DIR, "*.[jJ]
 

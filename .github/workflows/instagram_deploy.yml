@@ -2,8 +2,9 @@ name: Instagram Auto Post
 
 on:
   schedule:
-    - cron: '0 9 * * *'  # 毎日9時 (UTCなので日本時間18時)
-    - cron: '0 21 * * *' # 毎日21時 (UTCなので日本時間翌6時)
+    #- cron: '0 9 * * *'  # 毎日9時 (UTCなので日本時間18時)
+    #- cron: '0 21 * * *' # 毎日21時 (UTCなので日本時間翌6時)
+    - cron: '0 */3 * * *'
 
 jobs:
   post:
