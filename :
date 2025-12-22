@@ -24,32 +24,35 @@ def get_raw_url(image_path):
     return url
 
 def generate_caption_by_ai(image_url):
+    """
+    GPT-4oに画像を送り、海貝文風のキャプションとタグを生成させる
+    """
     print("Asking OpenAI to describe the image...")
     
+    # ここが「海貝文の分身」を作るためのプロンプトです
     system_prompt = """
     あなたは「都市の観察者」です。
-    送られてきた写真を、建築的、幾何学的、あるいはシュルレアリスム、ダダイズム、未来派の視点で分析し、Instagramのキャプションを生成してください。
+    送られてきた写真を、建築的、幾何学的、あるいはシュルレアリスムの視点で分析し、Instagramのキャプションを生成してください。
     
     # 制約条件
     - トーン：静的、客観的、少し詩的、あるいはハードボイルド。絵文字は使わない。
-    - 視点：色彩、光、構造、テクスチャ、都市の孤独などに注目する。
+    - 視点：色彩、光、構造、テクスチャ、都市の孤独、昭和レトロ、バグのような風景、などに注目する。
     - 言語：日本語。
     - 構成：
       1行目：短いタイトルあるいは詩的な一文。
-      2行目：その英語訳
-      最後：関連するハッシュタグを5個（英語と日本語を混ぜて）。
+      2行目以降：短い批評的コメント。
+      最後：関連するハッシュタグを5〜10個（英語と日本語を混ぜて）。
     
     # 悪い例
     「きれいな空ですね！」「楽しそう！」（感情的すぎるのはNG）
     
     # 良い例
-    「コンクリートの皮膚呼吸。あるいは80年代の亡霊」
-    「摩天楼とビルマブレンドの劇的な衝突」
+    「コンクリートの皮膚呼吸。80年代の亡霊が見える。」
     """
 
     try:
         response = client.chat.completions.create(
-            model="gpt-4o-mini", 
+            model="gpt-4o", # 画像認識ができる最強モデル
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": [
@@ -65,7 +68,7 @@ def generate_caption_by_ai(image_url):
     except Exception as e:
         print(f"OpenAI Error: {e}")
         # エラー時は無難なデフォルトキャプションを返す
-        return "Texture of the city.\n.\n#archive #streetphotography #snapshot #japanphotography"
+        return "Texture of the city.\n.\n#archive #streetphotography #tokyo"
 
 def post_to_instagram(image_url, caption):
     """Instagram Graph APIを叩いて投稿する"""
@@ -117,7 +120,7 @@ def main():
     # 1. 画像URL生成
     image_url = get_raw_url(target_image)
 
-    # 2. AIによるキャプション生成 
+    # 2. AIによるキャプション生成 (ここが新機能！)
     caption = generate_caption_by_ai(image_url)
 
     # 3. 投稿

@@ -4,7 +4,7 @@ on:
   schedule:
     #- cron: '0 9 * * *'  # 毎日9時 (UTCなので日本時間18時)
     #- cron: '0 21 * * *' # 毎日21時 (UTCなので日本時間翌6時)
-    - cron: '0 */3 * * *'
+    - cron: '0 */1 * * *' # テストとして1時間ごと
 
 jobs:
   post:
@@ -24,6 +24,7 @@ jobs:
         env:
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }} 
         run: python scripts/post_insta.py
 
       - name: Commit and Push changes (Delete uploaded photo)
