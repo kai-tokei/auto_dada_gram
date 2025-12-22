@@ -36,9 +36,7 @@ def generate_caption_by_ai(image_url):
     - 構成：
       1行目：短いタイトル一文。
       2行目：その英語訳
-      3行目：何が写っているのかを淡々と撮影者視点で客観的に日本語で説明する。新聞の美術紹介コラム風に。過去形を使うこと。300文字程度。
-      4行目：その英語訳
-      最後：関連するハッシュタグを5個（英語と日本語を混ぜて）。
+      3行目：関連するハッシュタグを5個（英語x3, 日本語x2）。
     
     # 悪い例
     「きれいな空ですね！」「楽しそう！」（感情的すぎるのはNG）
@@ -52,7 +50,7 @@ def generate_caption_by_ai(image_url):
 
     try:
         response = client.chat.completions.create(
-            model="gpt-4o-mini", 
+            model="gpt-4o", 
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": [
